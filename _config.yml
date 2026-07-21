@@ -1,0 +1,4 @@
+deploy:
+  type: git
+  repository: git@github.com:Oxygen-Hydrogen/HydrogenOxygen.github.io.git
+  branch: main
