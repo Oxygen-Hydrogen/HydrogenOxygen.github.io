@@ -1,0 +1,190 @@
+# KMP
+KMP 是由 Knuth，Morris，Pratt 共同发明的一种字符串算法。（这仨人名我都能背了（（
+
+嗯对。我们考虑字符串的前缀数组：$nxt_i$ 表示 $s_{0\sim i}$ 的最大真前缀字符串长度使得这个真前缀字符串等于等长的后缀字符串。不存在为 $0$。易得 $nxt_0=0$ 。
+
+然后呢，我们尝试暴力求。
+
+```cpp
+string s;
+for(int i=1;i<s.size();i++){
+	for(int j=i-1;j>0;j--)
+		if(s.substr(0,j)==s.substr(i-j+1,j)){
+			nxt[i]=j;
+			break;
+		}
+}
+```
+好的 $O(n^3)$ 听取 TLE 声一片，
+
+然后我们注意到一个事实：$nxt_i(i\ge 1)\le nxt_{i-1}+1$ 。\
+为什么？使用反证法证明。首先有 $nxt_i\le i$ 。如果 $nxt_i\ge nxt_{i-1}+2$ ，那么 $s_{0\sim nxt_i}=s_{i-nxt_i+1\sim i}$ ，所以 $s_{0\sim nxt_i-1}=s_{i-nxt_i+1\sim i-1}$ ，故 $nxt_{i-1}\ge nxt_i-1\ge nxt_{i-1}+2-1=nxt_{i-1}+1$ 不成立。$\Box$ 。
+
+
+```cpp
+string s;
+for(int i=1;i<s.size();i++){
+	for(int j=nxt[i-1]-1;j>0;j--)
+		if(s.substr(0,j)==s.substr(i-j+1,j)){
+			nxt[i]=j;
+			break;
+		}
+}
+```
+
+所以最多积累 $n-2$ 次，消耗 $n-1$ 次，总字符串比较次数为 $O(n)$ ，复杂度 $O(n^2)$ 。
+
+好的没 T 那么多个点了，但是依旧 T 了，怎么办？
+
+然后我们再注意到，其实不用一个一个地比，对于每个前缀的所有真前缀字符串等于等长的后缀字符串，这个序列是：$nxt_i,nxt_{nxt_i-1},nxt_{nxt_{nxt_i-1}-1},\cdots$ 。很简单，我就不多说了，但是非常有用。\
+然后，考虑向 $nxt_{i+1}$ 转移。因为只需要比较 $s_{nxt_i}$ 是否等于 $s_{i+1}$ 。
+- 等于？那么 $nxt_{i+1}=nxt_i+1$ 。
+- 不等于？那么往下跳。比较 $s_{nxt_{nxt_i-1}}$ 是否等于 $s_{i+1}$ 。
+  - 等于？那么 $nxt_{i+1}=nxt_{nxt_i-1}+1$ 。
+  - 不等于？继续往下跳。比较 $s_{nxt_{nxt_{nxt_i-1}-1}}$ 是否等于 $s_{i+1}$ 。
+    - ……
+    - 到了 $0$ 还不等于？那 $nxt_{i+1}=0$ 。
+
+好的这是 $O(n)$ 的，我也不知道为什么。（我们要做诚实的好孩子（划掉
+
+所以最终代码：
+
+```cpp
+string s;
+for(int i=1;i<s.size();i++){
+	int j=nxt[i-1];
+	while(j&&s[j]!=s[i])j=nxt[j-1];
+	nxt[i]=j+(s[j]==s[i]);
+}
+```
+
+好的那这玩意有什么用呢？
+
+KMP 适用于什么题呢？字符串匹配！比如说“在 $t$ 中找到 $s$ 出现了多少次，分别在哪里”之类的。\
+怎么做呢？将 $s$ 和 $t$ 接在一起，中间隔个字符，这个字符**需要 $\boldsymbol s$ 和 $\boldsymbol t$ 中都没有出现过**，然后对新串 KMP，对于 $i\ge|s|$，如果 $nxt_i=s$ 的话，那么在 $t$ 中 $i-2|s|+1$ 处出现了 $s$ 。
+
+---
+ok 呀，直接开始上题目！
+
+## A
+板子。第二问是求 $s_2$ 的 $nxt$ 。一起输出了。
+
+## B
+结论是 $|s_2|_\min=|s_1|-nxt_{|s_1|-1}$ 。不知道怎么证（）
+
+## C
+差分数组相等。
+
+## D
+之前的原题。将后一个字符串与当前将要输出的接在一起 KMP，把最后一节重复的丢掉。
+然后就喜提 TLE。因为是 $O(n^2)$ 的。会发现只需要截出一小段长度 $\ge$ 字符串长就行。得到要丢掉的长度。
+
+## E
+B 的升级版。把等于等长的后缀字符串的真前缀字符串的长度跳到最小。就是令 $f(x)=nxt_x-1$ ，求出 $k_i=f\cdot f\cdot \cdots \cdot f(i)+1$ 使 $k_i$ 最小且 $k_i\neq 0$ ，然后如果不存在 $k$ 令 $k=i$ 。答案为 $\sum_{i=1}^{|s|-1}i-k_i$ 。
+
+## F
+先跳出所有可能的前后缀，然后和中间一个一个 $nxt$ 比较。中间没跳所有可能，为什么莫名其妙的就对了呢？
+
+## G
+和 F 很像，不过要存下所有 $nxt$ 后统一跳，不然喜提 TLE。
+
+## H
+没说顺序，$n!$ 种情况。为什么我说的是 $n!$ 呢？因为有包含要干掉。
+
+## I
+
+直接跳跳跳！然后就超时了 T^T。
+
+```cpp
+#include<bits/stdc++.h>
+using namespace std;
+typedef long long ll;
+string s,t;
+string g;
+const int maxn=1e6+5,mod=1e9+7;
+int nxt[maxn],tmp[maxn];
+ll ans=1;
+ll cnt(ll x){
+	if(!x)return 0;
+	if(tmp[x])return tmp[x];
+	return tmp[x]=cnt(nxt[x-1])+1;
+}
+int main(){
+	ios::sync_with_stdio(false);
+	cin.tie(nullptr),cout.tie(nullptr);
+	int t;
+	cin>>t;
+	while(t--){
+		cin>>g;
+		fill(tmp+1,tmp+1+g.size(),0);
+		for(int i=1;i<g.size();i++){
+			int j=nxt[i-1];
+			while(j!=0&&g[i]!=g[j])j=nxt[j-1];
+			nxt[i]=j+(g[i]==g[j]);
+		}
+		for(int i=0;i<g.size();i++)cnt(nxt[i]);
+		for(int i=g.size()-1;i>=0;i--)
+			while(nxt[i]*2>i+1)nxt[i]=nxt[nxt[i]-1];
+		for(int i=0;i<g.size();i++)ans*=(cnt(nxt[i])+1),ans%=mod;
+		cout<<ans<<"\n";ans=1;
+	}
+	return 0;
+}
+```
+第一版 TLE 代码 ↑ $O(n^2)$ 。
+
+然后换成倍增跳就好了。一种神秘的想法可以把它想象成树上倍增（
+
+```cpp
+#include<bits/stdc++.h>
+using namespace std;
+typedef long long ll;
+string s,t;
+string g;
+const int maxn=1e6+5,mod=1e9+7;
+int nxt[maxn],tmp[maxn],dep[maxn],fa[25][maxn];
+ll ans=1;
+ll cnt(ll x){
+	if(!x)return 0;
+	if(tmp[x])return tmp[x];
+	return tmp[x]=cnt(nxt[x-1])+1;
+}
+int main(){
+	ios::sync_with_stdio(false);
+	cin.tie(nullptr),cout.tie(nullptr);
+	int t;
+	cin>>t;
+	while(t--){
+		cin>>g;
+		fill(tmp+1,tmp+1+g.size(),0);
+		for(int i=1;i<g.size();i++){
+			int j=nxt[i-1];
+			while(j!=0&&g[i]!=g[j])j=nxt[j-1];
+			nxt[i]=j+(g[i]==g[j]);
+		}
+		for(int i=0;i<g.size();i++)cnt(nxt[i]);
+		for(int i=0;i<g.size();i++){
+			if(!nxt[i])continue;
+			dep[nxt[i]]=dep[nxt[nxt[i]-1]]+1;
+			fa[0][nxt[i]]=nxt[nxt[i]-1];
+			for(int j=1;j<=20;j++)fa[j][nxt[i]]=fa[j-1][fa[j-1][nxt[i]]];
+		}
+		for(int i=0;i<g.size();i++){
+			if(nxt[i]*2<=i+1)continue;
+			for(int j=20;j>=0;j--)
+				if(fa[j][nxt[i]]*2>i+1)nxt[i]=fa[j][nxt[i]];
+			nxt[i]=fa[0][nxt[i]];
+		}
+		for(int i=0;i<g.size();i++)ans*=(cnt(nxt[i])+1),ans%=mod;
+		cout<<ans<<"\n";ans=1;
+	}
+	return 0;
+}
+```
+
+$O(n\log n)$ 。
+
+AC 时听取“woc”声一片（跟那天的人类智慧题一样
+
+## J
+首先我们可以求出字符串的前缀的最短“周期”为 $len$ ，然后算出有 $cnt$ 个“周期”，那么可以算出 $|A+B|=\lfloor\frac{cnt}k\rfloor\cdot len$，然后算出剩下的就是 $|A|=(cnt\bmod k)\cdot len+(i+1)\bmod len$ 。
